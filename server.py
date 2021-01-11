@@ -1,5 +1,5 @@
 from flask import Flask, request, abort
-import os
+import os,sys
 from linebot import (
     LineBotApi, WebhookHandler
 )
@@ -21,8 +21,8 @@ import pandas as pd
 app = Flask(__name__)
 
 # get channel_secret and channel_access_token from your environment variable
-channel_secret = os.getenv('LINE_CHANNEL_SECRET', None)
-channel_access_token = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', None)
+channel_secret = os.getenv('LINE_CHANNEL_SECRET', '9c2e4e2b5aaef60e5ab41b06477bc96a')
+channel_access_token = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', 'lt3Cpp1BQEotSa57s0VUqVaLVIXiYERmtKvvgwnl38dGcKCBwDgA8PXYF52slurUR3CzlImSpuPeiuZkr/1NC3EY/aWTrQ/ueICKKj4BIPufNTrR5F/v70sVnIEs0DW1Ha8FffWrPbrN3zv6KLcPfgdB04t89/1O/w1cDnyilFU=')
 if channel_secret is None or channel_access_token is None:
     print('Specify LINE_CHANNEL_SECRET and LINE_CHANNEL_ACCESS_TOKEN as environment variables.')
     sys.exit(1)
@@ -56,48 +56,42 @@ def get_doctors_url(refresh = False):
             pickle.dump(all_link, handle, protocol=pickle.HIGHEST_PROTOCOL)
         return all_link
 
-def find_df(dfs):
-    for df in dfs:
-        print(df)
-        if ('看診進度(備註)' in df.columns):
-            print("Find df")
-            return df
-        else:
-            print("not found df")
-
 def get_doctor_data(c, all_link,refresh = False):
     if os.path.isfile(c + ".pickle") and (refresh == False):
-        df = pd.read_pickle(c+'.pickle')
-        if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(df['time'][0])).seconds > 5 * 60:
+        with open(c+'.pickle', 'rb') as handle:
+            pkl = pickle.load(handle)
+        if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(pkl['time'])).seconds > 5 * 60:
             print("refresh doctor data")
             return get_doctor_data(c, all_link,True)
         else:
             print("history doctor data")
-            return df
+            return pkl['str']
     else:
-        dfs = pd.read_html("http://www.ktgh.com.tw/" + all_link[c])
-        df = find_df(dfs)
-        # df['doctor'] = df['看診醫師'].map(lambda x:x.split(' ')[-1].split('(')[0])
-        # df['num'] = df['看診進度(備註)'].map(lambda x:x.split('號')[1].split(':')[1])
-        # df = df.astype({'num': 'int32'})
-        df['time'] = time.time()
-        df.to_pickle(c + '.pickle')
-        return df
+        r = requests.get("http://www.ktgh.com.tw/" + all_link[c])
+        rt = r.text
+        rs = BeautifulSoup(rt, 'html.parser')
+        _str = ""
+        table = rs.find_all(attrs={'summary': '排版用表格'})[10]
+        doctors = table.find_all("a")
+        for doctor in doctors:
+            _time = doctor.parent.findNext('td')
+            if ('(' in doctor.text):
+                continue
+        #     print(doctor.text)
+        #     print(_time.text)    
+            _str += doctor.text + "\r\n" + _time.text + "\r\n" + "--------------------------------\r\n"
+        pkl = {
+            'str': _str,
+            'time': time.time(),
+        }
+        with open(c+'.pickle', 'wb') as handle:
+            pickle.dump(pkl, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        return _str
 
 def get_doctor_str(c, all_link):
     if c not in all_link:
         return "醫生還未開始看診"
-    df = get_doctor_data(c ,all_link)
-    arr_doctor = []
-    arr_status = []
-    str_ = ''
-    for d, r in df.iteritems():
-        if (d == '看診醫師'):
-            arr_doctor = (r.values)
-        if (d == '看診進度(備註)'):
-            arr_status = (r.values)
-    for i in list(zip(arr_doctor, arr_status)):
-        str_ += i[0] + "\r\n" + i[1] + "\r\n" + "--------------------------------" + "\r\n"
+    str_ = get_doctor_data(c ,all_link)
     return str_
 
 # 此為 Webhook callback endpoint
