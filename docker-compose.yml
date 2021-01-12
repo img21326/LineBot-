@@ -1,0 +1,15 @@
+version: '3'
+services:
+  web:
+    build: .
+    environment:
+        - LINE_CHANNEL_SECRET=${LINE_CHANNEL_SECRET}
+        - LINE_CHANNEL_ACCESS_TOKEN=${LINE_CHANNEL_ACCESS_TOKEN}
+      # - TZ=Asia/Taipei
+      # - VIRTUAL_HOST=linebotcallback.liiao.cc
+      # - VIRTUAL_PORT=8000
+      # - LETSENCRYPT_HOST=linebotcallback.liiao.cc
+      # - LETSENCRYPT_EMAIL=img21326@gmail.com
+    ports: 
+      - 8080:80
+    restart: always

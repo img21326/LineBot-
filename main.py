@@ -20,8 +20,8 @@ from datetime import datetime
 app = Flask(__name__)
 
 # get channel_secret and channel_access_token from your environment variable
-channel_secret = os.getenv('LINE_CHANNEL_SECRET', '9c2e4e2b5aaef60e5ab41b06477bc96a')
-channel_access_token = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', 'lt3Cpp1BQEotSa57s0VUqVaLVIXiYERmtKvvgwnl38dGcKCBwDgA8PXYF52slurUR3CzlImSpuPeiuZkr/1NC3EY/aWTrQ/ueICKKj4BIPufNTrR5F/v70sVnIEs0DW1Ha8FffWrPbrN3zv6KLcPfgdB04t89/1O/w1cDnyilFU=')
+channel_secret = os.getenv('LINE_CHANNEL_SECRET', None)
+channel_access_token = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', None)
 if channel_secret is None or channel_access_token is None:
     print('Specify LINE_CHANNEL_SECRET and LINE_CHANNEL_ACCESS_TOKEN as environment variables.')
     sys.exit(1)
@@ -125,5 +125,6 @@ def handle_message(event):
         TextSendMessage(text=text))
 
 
-if __name__ == '__main__':
-    app.run()
+if __name__ == "__main__":
+    # Only for debugging while developing
+    app.run(host='0.0.0.0', debug=False, port=80)
