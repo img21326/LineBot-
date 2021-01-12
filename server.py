@@ -16,7 +16,6 @@ import re
 import pickle
 import time
 from datetime import datetime
-import pandas as pd
 
 app = Flask(__name__)
 
