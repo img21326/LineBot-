@@ -38,7 +38,7 @@ if redis_host is None or redis_port is None:
     print('Specify REDIS_HOME and REDIS_PORT as environment variables.')
     sys.exit(1)
 
-pool = redis.ConnectionPool(host=redis_host, port=redis_port, decode_responses=True, password=redis_password)
+pool = redis.ConnectionPool(host=redis_host, port=redis_port, decode_responses=True, password=re)
 redis_client = redis.Redis(connection_pool=pool)
 
 line_bot_api = LineBotApi(channel_access_token)
