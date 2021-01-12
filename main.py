@@ -103,11 +103,17 @@ def get_doctor_data(c, all_link,refresh = False):
         doctors = table.find_all("a")
         for doctor in doctors:
             _time = doctor.parent.findNext('td')
+            if ('已' in str(_time.text)):
+                text1 = str(_time.text).split('已')[0] + '\r\n'
+                text1 = text1 + '已' + str(_time.text).split('已')[1]
+            else:
+                text1 = str(_time.text)
+
             if ('(' in doctor.text):
                 continue
         #     print(doctor.text)
         #     print(_time.text)    
-            _str += doctor.text + "\r\n" + _time.text + "\r\n" + "--------------------------------\r\n"
+            _str += doctor.text + "\r\n" + text1 + "\r\n" + "--------------------------------\r\n"
         pkl = {
             'str': _str,
             'time': time.time(),
@@ -169,6 +175,6 @@ def handle_message(event):
 
 if __name__ == "__main__":
     # Only for debugging while developing
-    app.run(host='0.0.0.0', debug=False, port=80)
+    # app.run(host='0.0.0.0', debug=False, port=80)
     # print(get_doctors_url())
     # print(get_doctor_str('一般內科', get_doctors_url()))
