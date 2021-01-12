@@ -117,8 +117,14 @@ def callback():
 def handle_message(event):
     # 決定要回傳什麼 Component 到 Channel
     all_links = get_doctors_url()
-    text = get_doctor_str(event.message.text , all_links)
-    print("text:" + text)
+
+    if (event.message.text == '列表'):
+        text = ""
+        for a in all_links.items():
+            text += str(a) + "\r\n==============="
+    else:
+        text = get_doctor_str(event.message.text , all_links)
+        print("text:" + text)
 
     line_bot_api.reply_message(
         event.reply_token,
