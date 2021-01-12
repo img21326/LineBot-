@@ -88,10 +88,10 @@ def get_doctor_data(c, all_link,refresh = False):
         return _str
 
 def get_doctor_str(c, all_link):
-    if c not in all_link:
-        return "醫生還未開始看診"
     if str(c).isnumeric():
         c = list(all_link.values)[c-1]
+    if c not in all_link:
+        return "醫生還未開始看診"
     str_ = get_doctor_data(c ,all_link)
     return str_
 
@@ -127,6 +127,7 @@ def handle_message(event):
             if a=='time':
                 continue
             text += str(i) + ":" + str(a) + "\r\n"
+            i += 1
     else:
         text = get_doctor_str(event.message.text , all_links)
         print("text:" + text)
