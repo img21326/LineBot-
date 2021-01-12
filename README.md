@@ -5,7 +5,7 @@
 ### 功能說明
 
 簡單地向LINE機器人發送要看診的科目，機器人就會自動幫你找資料，並回傳看診進度
-(每五分鐘更新一次資料)，爬蟲程式碼以jupyter開發，有興趣可以參考 [此連結](https://github.com/img21326/LineBotWatchDoctor/blob/main/%E7%88%AC%E8%9F%B2.ipynb)，快取存入pickle之中，並在每次執行時檢查時間是否超過五分鐘(目前未處理併發問題)。
+(每五分鐘更新一次資料)，爬蟲程式碼以jupyter開發，有興趣可以參考 [此連結](https://github.com/img21326/LineBotWatchDoctor/blob/main/%E7%88%AC%E8%9F%B2.ipynb)，快取存入REDIS之中，並在每次執行時檢查時間是否超過五分鐘。
 
 ### LIB
 
@@ -13,6 +13,7 @@
   - linebotsdk
   - requests
   - bs4
+  - redis
 
 ### Deploy
 
@@ -21,6 +22,7 @@
 ```sh
     export LINE_CHANNEL_SECRET=你的LINE_SECRET
     export LINE_CHANNEL_ACCESS_TOKEN=你的LINE_CHANNEL_ACCESS_TOKEN
+    export REDIS_PASSWD=你的密碼
     docker-compose up -d
 ```
 
