@@ -90,6 +90,8 @@ def get_doctor_data(c, all_link,refresh = False):
 def get_doctor_str(c, all_link):
     if c not in all_link:
         return "醫生還未開始看診"
+    if str(c).isnumeric():
+        c = list(all_link.values)[c-1]
     str_ = get_doctor_data(c ,all_link)
     return str_
 
@@ -118,12 +120,13 @@ def handle_message(event):
     # 決定要回傳什麼 Component 到 Channel
     all_links = get_doctors_url()
 
-    if (event.message.text == '列表'):
+    if (event.message.text == '列表' or event.message.text == '0'):
         text = ""
+        i = 1
         for a,value in all_links.items():
             if a=='time':
                 continue
-            text += str(a) + "\r\n"
+            text += str(i) + ":" + str(a) + "\r\n"
     else:
         text = get_doctor_str(event.message.text , all_links)
         print("text:" + text)
