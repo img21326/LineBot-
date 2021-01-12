@@ -15,6 +15,8 @@ from bs4 import BeautifulSoup
 import re
 import pickle
 import time
+import redis
+import json
 from datetime import datetime
 
 app = Flask(__name__)
@@ -22,24 +24,42 @@ app = Flask(__name__)
 # get channel_secret and channel_access_token from your environment variable
 channel_secret = os.getenv('LINE_CHANNEL_SECRET', None)
 channel_access_token = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', None)
+
+redis_host = os.getenv('REDIS_HOME', None)
+redis_port = os.getenv('REDIS_PORT', None)
+
+cache_time = os.getenv('CACHE_TIME', 5*60)
+
 if channel_secret is None or channel_access_token is None:
     print('Specify LINE_CHANNEL_SECRET and LINE_CHANNEL_ACCESS_TOKEN as environment variables.')
     sys.exit(1)
+if redis_host is None or redis_port is None:
+    print('Specify REDIS_HOME and REDIS_PORT as environment variables.')
+    sys.exit(1)
+
+pool = redis.ConnectionPool(host=redis_host, port=redis_port, decode_responses=True)
+redis_client = redis.Redis(connection_pool=pool)
 
 line_bot_api = LineBotApi(channel_access_token)
 handler = WebhookHandler(channel_secret)
 
 def get_doctors_url(refresh = False):
-    if os.path.isfile("links.pickle") and (refresh == False):
-        with open('links.pickle', 'rb') as handle:
-            all_link = pickle.load(handle)
-        if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(all_link['time'])).seconds > 5 * 60:
-            print("refresh links data")
-            return get_doctors_url(True)
-        else:
-            print("history links data")
-            return all_link
+    global redis_client
+    # if os.path.isfile("links.pickle") and (refresh == False):
+    #     with open('links.pickle', 'rb') as handle:
+    #         all_link = pickle.load(handle)
+    #     if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(all_link['time'])).seconds > 5 * 60:
+    #         print("refresh links data")
+    #         return get_doctors_url(True)
+    #     else:
+    #         print("history links data")
+    #         return all_link
+    rlinks = redis_client.get('links')
+    if rlinks != None and refresh == False:
+        print("history links data")
+        return json.loads(rlinks)
     else:
+        print("refresh links data")
         r = requests.get("http://www.ktgh.com.tw/Reg_Clinic_Progress.asp?CatID=39&ModuleType=Y")
         rt = r.text
         rs = BeautifulSoup(rt, 'html.parser')
@@ -50,22 +70,30 @@ def get_doctors_url(refresh = False):
             _link = (link['onclick'].split('\'')[1])
             _title = (link.find('a')['title'])
             all_link[_title] = _link
-        all_link['time'] = time.time()
-        with open('links.pickle', 'wb') as handle:
-            pickle.dump(all_link, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        # all_link['time'] = time.time()
+        # with open('links.pickle', 'wb') as handle:
+        #     pickle.dump(all_link, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        redis_client.setex("links", cache_time,json.dumps(all_link))
         return all_link
 
 def get_doctor_data(c, all_link,refresh = False):
-    if os.path.isfile(c + ".pickle") and (refresh == False):
-        with open(c+'.pickle', 'rb') as handle:
-            pkl = pickle.load(handle)
-        if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(pkl['time'])).seconds > 5 * 60:
-            print("refresh doctor data")
-            return get_doctor_data(c, all_link,True)
-        else:
-            print("history doctor data")
-            return pkl['str']
+    global redis_client
+    # if os.path.isfile(c + ".pickle") and (refresh == False):
+    #     with open(c+'.pickle', 'rb') as handle:
+    #         pkl = pickle.load(handle)
+    #     if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(pkl['time'])).seconds > 5 * 60:
+    #         print("refresh doctor data")
+    #         return get_doctor_data(c, all_link,True)
+    #     else:
+    #         print("history doctor data")
+    #         return pkl['str']
+    data = redis_client.get('doctor_' + c)
+    if data != None and refresh == False:
+        print("history doctor data")
+        data = json.loads(data)
+        return data['str']
     else:
+        print("refresh doctor data")
         r = requests.get("http://www.ktgh.com.tw/" + all_link[c])
         rt = r.text
         rs = BeautifulSoup(rt, 'html.parser')
@@ -83,8 +111,9 @@ def get_doctor_data(c, all_link,refresh = False):
             'str': _str,
             'time': time.time(),
         }
-        with open(c+'.pickle', 'wb') as handle:
-            pickle.dump(pkl, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        # with open(c+'.pickle', 'wb') as handle:
+        #     pickle.dump(pkl, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        redis_client.setex("doctor_" + c, cache_time,json.dumps(pkl))
         return _str
 
 def get_doctor_str(c, all_link):
@@ -140,3 +169,5 @@ def handle_message(event):
 if __name__ == "__main__":
     # Only for debugging while developing
     app.run(host='0.0.0.0', debug=False, port=80)
+    # print(get_doctors_url())
+    # print(get_doctor_str('一般內科', get_doctors_url()))
