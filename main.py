@@ -120,8 +120,10 @@ def handle_message(event):
 
     if (event.message.text == '列表'):
         text = ""
-        for a in all_links.items():
-            text += str(a) + "\r\n==============="
+        for a,value in all_links.items():
+            if a=='time':
+                continue
+            text += str(a) + "\r\n"
     else:
         text = get_doctor_str(event.message.text , all_links)
         print("text:" + text)
