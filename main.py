@@ -27,6 +27,7 @@ channel_access_token = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', None)
 
 redis_host = os.getenv('REDIS_HOME', None)
 redis_port = os.getenv('REDIS_PORT', None)
+redis_password = os.getenv('REDIS_PASSWD', None)
 
 cache_time = os.getenv('CACHE_TIME', 5*60)
 
@@ -37,7 +38,7 @@ if redis_host is None or redis_port is None:
     print('Specify REDIS_HOME and REDIS_PORT as environment variables.')
     sys.exit(1)
 
-pool = redis.ConnectionPool(host=redis_host, port=redis_port, decode_responses=True)
+pool = redis.ConnectionPool(host=redis_host, port=redis_port, decode_responses=True, password=redis_password)
 redis_client = redis.Redis(connection_pool=pool)
 
 line_bot_api = LineBotApi(channel_access_token)
