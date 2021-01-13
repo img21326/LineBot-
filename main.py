@@ -98,7 +98,7 @@ def get_doctor_data(c, all_link,refresh = False):
         r = requests.get("http://www.ktgh.com.tw/" + all_link[c])
         rt = r.text
         rs = BeautifulSoup(rt, 'html.parser')
-        _str = ""
+        _str = str(c) + '--------------------------------\r\n'
         table = rs.find_all(attrs={'summary': '排版用表格'})[10]
         doctors = table.find_all("a")
         for doctor in doctors:
@@ -125,7 +125,10 @@ def get_doctor_data(c, all_link,refresh = False):
 
 def get_doctor_str(c, all_link):
     if str(c).isnumeric():
-        c = list(all_link.values)[c-1]
+        try:
+            c = list(all_link.values)[c-1]
+        except:
+            c = 'error'
     if c not in all_link:
         return "醫生還未開始看診"
     str_ = get_doctor_data(c ,all_link)
@@ -175,6 +178,6 @@ def handle_message(event):
 
 if __name__ == "__main__":
     # Only for debugging while developing
-    # app.run(host='0.0.0.0', debug=False, port=80)
+    app.run(host='0.0.0.0', debug=False, port=80)
     # print(get_doctors_url())
     # print(get_doctor_str('一般內科', get_doctors_url()))
