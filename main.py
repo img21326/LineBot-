@@ -17,7 +17,7 @@ import pickle
 import time
 import redis
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
@@ -38,8 +38,26 @@ if redis_host is None or redis_port is None:
     print('Specify REDIS_HOME and REDIS_PORT as environment variables.')
     sys.exit(1)
 
-pool = redis.ConnectionPool(host=redis_host, port=redis_port, decode_responses=True, password=re)
+pool = redis.ConnectionPool(host=redis_host, port=redis_port, decode_responses=True, password=redis_password)
 redis_client = redis.Redis(connection_pool=pool)
+
+try:
+    redis_client.ping()
+    # redis_client.pfadd(datetime.today().strftime("%Y/%m/%d"),"A")
+    # redis_client.pfadd((datetime.today()+timedelta(days=1)).strftime("%Y/%m/%d"),"B")
+    # redis_client.pfadd((datetime.today()+timedelta(days=2)).strftime("%Y/%m/%d"),"C")
+    # redis_client.pfadd((datetime.today()+timedelta(days=3)).strftime("%Y/%m/%d"),"A")
+    # print("----------------------------------------------")
+    # print(redis_client.pfcount(datetime.today().strftime("%Y/%m/%d")))
+except Exception as e:
+    print('---------[Error]---------')
+    print(e)
+    print('redis connect error')
+    print('host:'+redis_host)
+    print('port:'+redis_port)
+    print('pwd:' + redis_password)
+    sys.exit(1)
+print('connected to redis "{}"'.format(redis_host)) 
 
 line_bot_api = LineBotApi(channel_access_token)
 handler = WebhookHandler(channel_secret)
@@ -98,7 +116,7 @@ def get_doctor_data(c, all_link,refresh = False):
         r = requests.get("http://www.ktgh.com.tw/" + all_link[c])
         rt = r.text
         rs = BeautifulSoup(rt, 'html.parser')
-        _str = str(c) + '--------------------------------\r\n'
+        _str = str(c) + '\r\n--------------------------------\r\n'
         table = rs.find_all(attrs={'summary': '排版用表格'})[10]
         doctors = table.find_all("a")
         for doctor in doctors:
@@ -114,6 +132,7 @@ def get_doctor_data(c, all_link,refresh = False):
         #     print(doctor.text)
         #     print(_time.text)    
             _str += doctor.text + "\r\n" + text1 + "\r\n" + "--------------------------------\r\n"
+        _str = _str + '最後更新時間:' + str(datetime.now().strftime("%Y/%m/%d %H:%M"))
         pkl = {
             'str': _str,
             'time': time.time(),
@@ -123,12 +142,16 @@ def get_doctor_data(c, all_link,refresh = False):
         redis_client.setex("doctor_" + c, cache_time,json.dumps(pkl))
         return _str
 
-def get_doctor_str(c, all_link):
+def get_doctor_str(c):
+    all_link = get_doctors_url()
     if str(c).isnumeric():
         try:
-            c = list(all_link.values)[c-1]
-        except:
+            c = int(c)
+            c = list(all_link)[c-1]
+        except Exception as e:
+            print(e)
             c = 'error'
+    print(c)
     if c not in all_link:
         return "醫生還未開始看診"
     str_ = get_doctor_data(c ,all_link)
@@ -157,9 +180,11 @@ def callback():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     # 決定要回傳什麼 Component 到 Channel
-    all_links = get_doctors_url()
-
+    global redis_client
+    user_id = event.source.user_id
+    redis_client.pfadd("usrcnt_" + datetime.today().strftime("%Y/%m/%d"),user_id)
     if (event.message.text == '列表' or event.message.text == '0'):
+        all_links = get_doctors_url()
         text = ""
         i = 1
         for a,value in all_links.items():
@@ -167,8 +192,27 @@ def handle_message(event):
                 continue
             text += str(i) + ":" + str(a) + "\r\n"
             i += 1
+    elif ('admin' in str(event.message.text)):
+        message = str(event.message.text).split(' ')
+        pwd = message[1]
+        if (pwd == '666'):
+            cmd = message[2]
+            if (cmd == 'usrcnt'):
+                text = "今日使用人數:" + str(redis_client.pfcount("usrcnt_" + datetime.today().strftime("%Y/%m/%d")))
+            if (cmd == 'daycnt'):
+                text = ""
+                for x in redis_client.keys("daycnt_*"):
+                    text += str(x) + " = "+ str(redis_client.get(x)) + "\r\n"
+                    redis_client.expire(x, 5 * 60)
+
     else:
-        text = get_doctor_str(event.message.text , all_links)
+        cnt = redis_client.get("daycnt_" + str(datetime.now().strftime("%Y/%m/%d-%H")))
+        if (cnt == None):
+            redis_client.set("daycnt_" + str(datetime.now().strftime("%Y/%m/%d-%H")), 1)
+        else:
+            redis_client.incr("daycnt_" + str(datetime.now().strftime("%Y/%m/%d-%H")), 1)
+        text = get_doctor_str(event.message.text)
+        print(user_id)
         print("text:" + text)
 
     line_bot_api.reply_message(
