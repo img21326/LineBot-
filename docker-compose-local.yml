@@ -20,6 +20,21 @@ services:
       - redis
   redis:
     image: redis:4-alpine
-    command: redis-server --requirepass ${REDIS_PASSWD}
+    command: redis-server --requirepass pwd1234
     ports:
       - 6379:6379
+
+  db:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    ports: 
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
