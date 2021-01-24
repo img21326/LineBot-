@@ -9,6 +9,7 @@ from linebot.exceptions import (
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,
 )
+from flask_sqlalchemy import SQLAlchemy
 
 import requests
 from bs4 import BeautifulSoup
@@ -21,14 +22,36 @@ from datetime import datetime, timedelta
 import configparser
 from ._class.Hospital import KT_Hospital
 
+db = SQLAlchemy()
+
 def create_app():
 
     app = Flask(__name__)
 
     config = configparser.ConfigParser()
     config.read('app/config.ini')
-    hospitals = {}
 
+
+    POSTGRES = {
+        'usr': config['DB']['usr'],
+        'pwd': config['DB']['pwd'],
+        'host': config['DB']['host'],
+        'port': config['DB']['port'],
+        'table': config['DB']['table'],
+    }
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://%(usr)s:%(pwd)s@%(host)s:%(port)s/%(table)s' % POSTGRES
+    db.init_app(app)
+
+    try:
+        with app.app_context():
+            db.session.execute('SELECT 1')
+            print("POSTGRES DATABASE CONNECT")
+    except:
+        print("POSTGRES DATABASE CANT CONNECT")
+        sys.exit(1)
+
+
+    hospitals = {}
     for h in config['DEFAULT']['hospital'].split(','):
         channel_secret = config[h]['channel_secret']
         channel_access_token = config[h]['channel_access_token']

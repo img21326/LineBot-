@@ -1,23 +1,18 @@
 version: '3'
 services:
-  web:
-    build: .
-    environment:
-        - LINE_CHANNEL_SECRET=${LINE_CHANNEL_SECRET}
-        - LINE_CHANNEL_ACCESS_TOKEN=${LINE_CHANNEL_ACCESS_TOKEN}
-        - REDIS_HOME=redis
-        - REDIS_PORT=6379
-        - REDIS_PASSWD=${REDIS_PASSWD}
-        - TZ=Asia/Taipei
-      # - VIRTUAL_HOST=linebotcallback.liiao.cc
-      # - VIRTUAL_PORT=8000
-      # - LETSENCRYPT_HOST=linebotcallback.liiao.cc
-      # - LETSENCRYPT_EMAIL=img21326@gmail.com
-    ports: 
-      - 8085:80
-    restart: always
-    depends_on: 
-      - redis
+  # web:
+  #   build: .
+  #   environment:
+  #       - TZ=Asia/Taipei
+  #     # - VIRTUAL_HOST=linebotcallback.liiao.cc
+  #     # - VIRTUAL_PORT=8000
+  #     # - LETSENCRYPT_HOST=linebotcallback.liiao.cc
+  #     # - LETSENCRYPT_EMAIL=img21326@gmail.com
+  #   ports: 
+  #     - 8085:80
+  #   restart: always
+  #   depends_on: 
+  #     - redis
   redis:
     image: redis:4-alpine
     command: redis-server --requirepass pwd1234
@@ -25,13 +20,12 @@ services:
       - 6379:6379
 
   db:
-    image: mysql
-    command: --default-authentication-plugin=mysql_native_password
+    image: postgres
     restart: always
     ports: 
-      - 3306:3306
+      - 5432:5432
     environment:
-      MYSQL_ROOT_PASSWORD: example
+      POSTGRES_PASSWORD: example
 
   adminer:
     image: adminer
