@@ -1,0 +1,35 @@
+[DEFAULT]
+hospital = kt_diajia,kt_shalu
+; kt_tongxia
+cache_time  = 300
+
+[DB]
+host = 
+port = 
+usr = 
+pwd = 
+table = 
+
+[REDIS]
+host = localhost
+port = 6379
+pwd = pwd1234
+
+[kt_diajia]
+_id = 39
+class_extend = KT
+channel_secret = 
+channel_access_token = 
+redis_channel = 0
+
+[kt_shalu]
+_id = 38
+class_extend = KT
+channel_secret = 
+channel_access_token = 
+redis_channel = 1
+
+; [kt_tongxia]
+; channel_secret =
+; channel_access_token = 
+; redis_channel = 
