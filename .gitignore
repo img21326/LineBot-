@@ -1,4 +1,7 @@
 *.pickle
 .ipynb_checkpoints
 .ipynb_checkpoints\*
+*.py[cod]
+__pycache__/
+__pycache__/*
 config.ini
