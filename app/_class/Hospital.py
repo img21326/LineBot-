@@ -13,6 +13,9 @@ class Hospital():
     parser = None
     redis = None
     cache_time = None
+
+    all_list = None
+    list_update_time = None
     
     def __init__(self,sct, asst, rdc, lba = None, ps = None):
         self.channel_secret = sct
@@ -30,18 +33,75 @@ class Hospital():
     def crawl_doctor(self):
         return None
 
-    def get_from_redis(self):
-        return None
+class CCGH_Hospital(Hospital):
+    url = 'http://api.ccgh.com.tw/api/GetClinicMainList/GetClinicMainData'
     
-    def set_to_redis(self):
-        return None
+    def crawl_data(self, part):
+        if (self.crawl_list() == False):
+            return "還未開始看診"
+        if str(part).isnumeric():
+            try:
+                part = int(part)
+                part = list(self.all_list)[part-1]
+            except Exception as e:
+                print(e)
+                part = 'error'
+        if part not in self.all_list:
+            return "醫生還未開始看診"
+        text = part + "\r\n--------------------------------\r\n"
+        for i in self.all_list[part]:
+            print(i)
+            text += i['doctor'] + '\r\n'
+            text += '尚未看診:' + str(i['NotYetNumber'])+ '\r\n'
+            text += '完成看診:' + str(i['FinishNumber']) + '\r\n'
+            text += '目前號碼:' + str(i['LastNumberNew']) + '\r\n'
+            text += "--------------------------------\r\n"
+        text += '最後更新時間:' + str(self.all_list['last_update_time'])
+        return text
+
+    def crawl_list(self,refresh = False):
+        all_list = self.redis.get('all_list')
+        if all_list != None and refresh == False:
+            print("history all_list data")
+            self.all_list = json.loads(all_list)
+        else:
+            r = requests.get(self.url)
+            if (r.status_code != 200):
+                return False
+            j = json.loads(r.text)
+            all_list = {}
+            for a in j:
+                all_list[a['Clinic']] = []
+            for a in j:
+                all_list[a['Clinic']].append(
+                {
+                    'doctor': a['DoctorName'],
+                    'NotYetNumber': a['NotYetNumber'],
+                    'FinishNumber': a['FinishNumber'],
+                    'LastNumberNew': a['LastNumberNew'],
+                    'doctor': a['DoctorName'],
+                })
+            all_list['last_update_time'] = datetime.now().strftime("%Y/%m/%d %H:%M")
+            self.redis.setex("all_list", self.cache_time,json.dumps(all_list))
+            self.all_list = all_list
+            self.list_update_time = datetime.now()
+        i=1
+        text=''
+        if (len(self.all_list) == 0):
+            return "還未開始看診"
+        for a in self.all_list:
+            if a=='last_update_time':
+                continue
+            text += str(i) + ":" + str(a) + "\r\n"
+            i += 1
+        return text
+
 
 class KT_Hospital(Hospital):
     _id = None
     web_url = 'http://www.ktgh.com.tw/'
     list_url = None
     all_list = None
-    list_update_time = None
 
     def set_url(self, _id):
         self._id = _id
@@ -83,16 +143,12 @@ class KT_Hospital(Hospital):
 
                 if ('(' in doctor.text):
                     continue
-            #     print(doctor.text)
-            #     print(_time.text)    
                 _str += doctor.text + "\r\n" + text1 + "\r\n" + "--------------------------------\r\n"
             _str = _str + '最後更新時間:' + str(datetime.now().strftime("%Y/%m/%d %H:%M"))
             pkl = {
                 'str': _str,
                 'time': time.time(),
             }
-            # with open(c+'.pickle', 'wb') as handle:
-            #     pickle.dump(pkl, handle, protocol=pickle.HIGHEST_PROTOCOL)
             self.redis.setex("doctor_" + part, self.cache_time,json.dumps(pkl))
             return _str
 

@@ -20,7 +20,7 @@ import redis
 import json
 from datetime import datetime, timedelta
 import configparser
-from ._class.Hospital import KT_Hospital
+from ._class.Hospital import KT_Hospital,CCGH_Hospital
 
 db = SQLAlchemy()
 
@@ -62,6 +62,8 @@ def create_app():
         if (config[h]['class_extend'] == 'KT'):
             hostipal = KT_Hospital(channel_secret,channel_access_token,redis_channel)
             hostipal.set_url(config[h]['_id'])
+        if (config[h]['class_extend'] == 'CCGH'):
+            hostipal = CCGH_Hospital(channel_secret,channel_access_token,redis_channel)
         hospitals[h] = hostipal
 
     redis_host = config['REDIS']['host']
@@ -104,6 +106,7 @@ def create_app():
 
         # handle webhook body（負責）
         try:
+            print(hospitals[hospital])
             if (hospitals[hospital].parser == None):
                 parser = WebhookParser(hospitals[hospital].channel_secret)
                 hospitals[hospital].parser = parser
