@@ -10,7 +10,7 @@ from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,
 )
 from flask_sqlalchemy import SQLAlchemy
-
+from flask_migrate import Migrate
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -24,6 +24,7 @@ from ._class.Hospital import KT_Hospital
 
 db = SQLAlchemy()
 
+
 def create_app():
 
     app = Flask(__name__)
@@ -33,15 +34,15 @@ def create_app():
 
 
     POSTGRES = {
-        'usr': config['DB']['usr'],
-        'pwd': config['DB']['pwd'],
-        'host': config['DB']['host'],
-        'port': config['DB']['port'],
-        'table': config['DB']['table'],
+        'usr': str(config['DB']['usr']),
+        'pwd': str(config['DB']['pwd']),
+        'host': str(config['DB']['host']),
+        'port': str(config['DB']['port']),
+        'table': str(config['DB']['table']),
     }
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://%(usr)s:%(pwd)s@%(host)s:%(port)s/%(table)s' % POSTGRES
+    app.config['SQLALCHEMY_DATABASE_URI'] = str('postgresql://%(usr)s:%(pwd)s@%(host)s:%(port)s/%(table)s' % POSTGRES)
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
     db.init_app(app)
-
     try:
         with app.app_context():
             db.session.execute('SELECT 1')
@@ -49,7 +50,9 @@ def create_app():
     except:
         print("POSTGRES DATABASE CANT CONNECT")
         sys.exit(1)
-
+    # print(db)
+    migrate = Migrate(app, db)
+    from .model.Usage import UsageModel
 
     hospitals = {}
     for h in config['DEFAULT']['hospital'].split(','):
