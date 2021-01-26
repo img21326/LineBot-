@@ -1,14 +1,14 @@
 [DEFAULT]
-hospital = kt_diajia,kt_shalu
-; kt_tongxia
+hospital = kt_diajia,vgh
+; kt_tongxia,kt_shalu,ccgh
 cache_time  = 300
 
 [DB]
-host = 
-port = 
-usr = 
-pwd = 
-table = 
+host = localhost
+port = 5432
+usr = postgres
+pwd = example
+table = linbotdoctor
 
 [REDIS]
 host = localhost
@@ -22,12 +22,17 @@ channel_secret =
 channel_access_token = 
 redis_channel = 0
 
-[kt_shalu]
-_id = 38
-class_extend = KT
+[vgh]
+class_extend = 
 channel_secret = 
 channel_access_token = 
 redis_channel = 1
+
+; [ccgh]
+; class_extend = CCGH
+; channel_secret = 
+; channel_access_token = 
+; redis_channel = 1
 
 ; [kt_tongxia]
 ; channel_secret =
