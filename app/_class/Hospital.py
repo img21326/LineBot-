@@ -180,7 +180,7 @@ class KT_Hospital(Hospital):
 
     def crawl_data(self, part, refresh = False):
         self.crawl_list()
-        self.part_to_num(part)
+        part = self.part_to_num(part)
         if part not in self.all_list:
             return "醫生還未開始看診"
         data = self.redis.get('doctor_' + part)
@@ -190,10 +190,10 @@ class KT_Hospital(Hospital):
             return data['str']
         else:
             print("refresh doctor data")
-            r = requests.get("http://www.ktgh.com.tw/" + self.all_list[c])
+            r = requests.get("http://www.ktgh.com.tw/" + self.all_list[part])
             rt = r.text
             rs = BeautifulSoup(rt, 'html.parser')
-            _str = str(c) + '\r\n--------------------------------\r\n'
+            _str = str(part) + '\r\n--------------------------------\r\n'
             table = rs.find_all(attrs={'summary': '排版用表格'})[10]
             doctors = table.find_all("a")
             for doctor in doctors:

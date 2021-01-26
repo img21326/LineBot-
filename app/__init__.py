@@ -22,7 +22,7 @@ from datetime import datetime, timedelta
 import configparser
 from ._class.Hospital import KT_Hospital,CCGH_Hospital,VGH_Hospital
 
-db = SQLAlchemy()
+# db = SQLAlchemy()
 
 
 def create_app():
@@ -42,17 +42,17 @@ def create_app():
     }
     app.config['SQLALCHEMY_DATABASE_URI'] = str('postgresql://%(usr)s:%(pwd)s@%(host)s:%(port)s/%(table)s' % POSTGRES)
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
-    db.init_app(app)
-    try:
-        with app.app_context():
-            db.session.execute('SELECT 1')
-            print("POSTGRES DATABASE CONNECT")
-    except:
-        print("POSTGRES DATABASE CANT CONNECT")
-        sys.exit(1)
-    # print(db)
-    migrate = Migrate(app, db)
-    from .model.Usage import UsageModel
+    # db.init_app(app)
+    # try:
+    #     with app.app_context():
+    #         db.session.execute('SELECT 1')
+    #         print("POSTGRES DATABASE CONNECT")
+    # except:
+    #     print("POSTGRES DATABASE CANT CONNECT")
+    #     sys.exit(1)
+    # # print(db)
+    # migrate = Migrate(app, db)
+    # from .model.Usage import UsageModel
 
     hospitals = {}
     for h in config['DEFAULT']['hospital'].split(','):
