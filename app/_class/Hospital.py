@@ -27,18 +27,7 @@ class Hospital():
     def set_url(self):
         pass
 
-    def crawl_list(self):
-        return None
-
-    def crawl_doctor(self):
-        return None
-
-class CCGH_Hospital(Hospital):
-    url = 'http://api.ccgh.com.tw/api/GetClinicMainList/GetClinicMainData'
-    
-    def crawl_data(self, part):
-        if (self.crawl_list() == False):
-            return "還未開始看診"
+    def part_to_num(self, part):
         if str(part).isnumeric():
             try:
                 part = int(part)
@@ -46,6 +35,88 @@ class CCGH_Hospital(Hospital):
             except Exception as e:
                 print(e)
                 part = 'error'
+        return part
+
+    def crawl_list(self):
+        return None
+
+    def crawl_doctor(self):
+        return None
+
+class VGH_Hospital(Hospital):
+    list_url = 'https://www.vghtc.gov.tw/APIPage/OutpatientProcess'
+    def crawl_data(self, part, refresh = False):
+        self.crawl_list()
+        part = self.part_to_num(part)
+        if part not in self.all_list:
+            return "醫生還未開始看診"
+        data = self.redis.get('doctor_' + part)
+        if data != None and refresh == False:
+            print("history doctor data")
+            data = json.loads(data)
+            return data['str']
+        else:
+            print("refresh doctor data")
+            r = requests.get(self.all_list[part])
+            rt = r.text
+            rs = BeautifulSoup(rt, 'html.parser')
+            result2 = rs.find("div", class_="table-responsive-close").find("tbody" , class_ = "row-i")
+            orderlist = ["order-1","order-8","order-4","order-3","order-5","order-6"]
+            all_result = []
+            for i in range(len(result2.find_all("tr"))): #看診數 or 醫生數
+                result3 = result2.find_all("tr")[i]
+                result_dict = {}
+                for j in range(len(orderlist)): #醫生門診看診進度
+                    result_dict[result3.find("td" , class_ = orderlist[j]).get("data-th")] = result3.find("td" , class_ = orderlist[j]).text
+                result_dict[(result3.find("td" , class_ = "order-2").get("data-th"))] = int(result3.find("td" , class_ = "order-2").find("span").text)
+                all_result.append(result_dict)
+            _str = str(part) + '\r\n--------------------------------\r\n'
+            
+            for r in all_result:
+                _str += '醫師:' + r['醫師'] + "(" + str(r['診間']) + ")" +'\r\n'
+                _str += '目前看診號次:' + str(r['目前看診號次']) + '\r\n'
+                _str += '過號待看人數:' + str(r['過號待看人數'])+ '\r\n--------------------------------\r\n'
+            _str = _str + '最後更新時間:' + str(datetime.now().strftime("%Y/%m/%d %H:%M"))
+            pkl = {
+                'str': _str,
+                'time': time.time(),
+            }
+            print(_str)
+            self.redis.setex("doctor_" + part, self.cache_time,json.dumps(pkl))
+            return _str
+    def crawl_list(self, refresh=False):
+        rlinks = self.redis.get('links')
+        if rlinks != None and refresh == False:
+            print("history links data")
+            self.all_list = json.loads(rlinks)
+        else:
+            print("refresh links data")
+            r = requests.get(self.list_url)
+            rt = r.text
+            soup1 = BeautifulSoup(rt, 'html.parser')
+            result1 = soup1.find_all("li", class_="row-p1")
+            all_list = {}
+            for i in range(len(result1)):
+                all_list[result1[i].find("a").get("title")] = "https://www.vghtc.gov.tw" + result1[i].find("a").get("href")
+            self.all_list = all_list
+            self.redis.setex("links", self.cache_time,json.dumps(self.all_list))
+        self.list_update_time = time.time()
+        text = ""
+        i = 1
+        for a,value in self.all_list.items():
+            text += str(i) + ":" + str(a) + "\r\n"
+            i += 1
+        if (len(self.all_list) == 0):
+            text = "還未開始看診"
+        return text
+
+class CCGH_Hospital(Hospital):
+    url = 'http://api.ccgh.com.tw/api/GetClinicMainList/GetClinicMainData'
+    
+    def crawl_data(self, part):
+        if (self.crawl_list() == False):
+            return "還未開始看診"
+        part = self.part_to_num(part)
         if part not in self.all_list:
             return "醫生還未開始看診"
         text = part + "\r\n--------------------------------\r\n"
@@ -108,16 +179,8 @@ class KT_Hospital(Hospital):
         self.list_url = 'http://www.ktgh.com.tw/Reg_Clinic_Progress.asp?CatID={_id}&ModuleType=Y'.format(_id=_id)
 
     def crawl_data(self, part, refresh = False):
-        if (self.all_list == None or ((datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(self.list_update_time)).seconds > self.cache_time) ):
-            print("object don't has all list")
-            self.crawl_list()
-        if str(part).isnumeric():
-            try:
-                part = int(part)
-                part = list(self.all_list)[part-1]
-            except Exception as e:
-                print(e)
-                part = 'error'
+        self.crawl_list()
+        self.part_to_num(part)
         if part not in self.all_list:
             return "醫生還未開始看診"
         data = self.redis.get('doctor_' + part)

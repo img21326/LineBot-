@@ -20,7 +20,7 @@ import redis
 import json
 from datetime import datetime, timedelta
 import configparser
-from ._class.Hospital import KT_Hospital,CCGH_Hospital
+from ._class.Hospital import KT_Hospital,CCGH_Hospital,VGH_Hospital
 
 db = SQLAlchemy()
 
@@ -64,6 +64,8 @@ def create_app():
             hostipal.set_url(config[h]['_id'])
         if (config[h]['class_extend'] == 'CCGH'):
             hostipal = CCGH_Hospital(channel_secret,channel_access_token,redis_channel)
+        if (config[h]['class_extend'] == 'VGH'):
+            hostipal = VGH_Hospital(channel_secret,channel_access_token,redis_channel)
         hospitals[h] = hostipal
 
     redis_host = config['REDIS']['host']
