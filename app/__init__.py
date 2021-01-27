@@ -132,6 +132,7 @@ def create_app():
             if (event.message.text == '列表' or event.message.text == '0'):
                 text = hospitals[hospital].crawl_list()
             else:
+                print(event.source.user_id)
                 text = hospitals[hospital].crawl_data(part = event.message.text, user_id=event.source.user_id)
             hospitals[hospital].line_bot_api.reply_message(
                 event.reply_token,

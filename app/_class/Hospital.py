@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import re
 import time
 from datetime import datetime, timedelta
+from .. import db
 from ..model.Usage import UsageModel
 
 class Hospital():
@@ -191,7 +192,7 @@ class KT_Hospital(Hospital):
         self._id = _id
         self.list_url = 'http://www.ktgh.com.tw/Reg_Clinic_Progress.asp?CatID={_id}&ModuleType=Y'.format(_id=_id)
 
-    def crawl_data(self, part, refresh = False):
+    def crawl_data(self, part, user_id,refresh = False):
         self.crawl_list()
         part = self.part_to_num(part)
         if part not in self.all_list:
