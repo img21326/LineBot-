@@ -4,8 +4,10 @@ from bs4 import BeautifulSoup
 import re
 import time
 from datetime import datetime, timedelta
+from ..model.Usage import UsageModel
 
 class Hospital():
+    name = None
     channel_secret = None
     channel_access_token = None
     redis_channel = None
@@ -17,7 +19,8 @@ class Hospital():
     all_list = None
     list_update_time = None
     
-    def __init__(self,sct, asst, rdc, lba = None, ps = None):
+    def __init__(self,name, sct, asst, rdc, lba = None, ps = None):
+        self.name = name
         self.channel_secret = sct
         self.channel_access_token = asst
         self.redis_channel = rdc
@@ -37,19 +40,29 @@ class Hospital():
                 part = 'error'
         return part
 
-    def crawl_list(self):
+    def crawl_list(self,refresh=False):
         return None
 
-    def crawl_doctor(self):
+    def insert_usage(self,part,user_id,hospital):
+        usage = UsageModel(
+                    user_id=user_id,
+                    hospital= hospital,
+                    part=part
+                    )
+        db.session.add(usage)
+        db.session.commit()
+
+    def crawl_data(self,part,user_id,refresh=False):
         return None
 
 class VGH_Hospital(Hospital):
     list_url = 'https://www.vghtc.gov.tw/APIPage/OutpatientProcess'
-    def crawl_data(self, part, refresh = False):
+    def crawl_data(self, part,user_id, refresh = False):
         self.crawl_list()
         part = self.part_to_num(part)
         if part not in self.all_list:
             return "醫生還未開始看診"
+        self.insert_usage(part,user_id,self.name)
         data = self.redis.get('doctor_' + part)
         if data != None and refresh == False:
             print("history doctor data")
@@ -113,12 +126,13 @@ class VGH_Hospital(Hospital):
 class CCGH_Hospital(Hospital):
     url = 'http://api.ccgh.com.tw/api/GetClinicMainList/GetClinicMainData'
     
-    def crawl_data(self, part):
+    def crawl_data(self, part,user_id):
         if (self.crawl_list() == False):
             return "還未開始看診"
         part = self.part_to_num(part)
         if part not in self.all_list:
             return "醫生還未開始看診"
+        self.insert_usage(part,user_id,self.name)
         text = part + "\r\n--------------------------------\r\n"
         for i in self.all_list[part]:
             print(i)
@@ -167,7 +181,6 @@ class CCGH_Hospital(Hospital):
             i += 1
         return text
 
-
 class KT_Hospital(Hospital):
     _id = None
     web_url = 'http://www.ktgh.com.tw/'
@@ -183,6 +196,7 @@ class KT_Hospital(Hospital):
         part = self.part_to_num(part)
         if part not in self.all_list:
             return "醫生還未開始看診"
+        self.insert_usage(part,user_id,self.name)
         data = self.redis.get('doctor_' + part)
         if data != None and refresh == False:
             print("history doctor data")

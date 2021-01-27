@@ -20,10 +20,8 @@ import redis
 import json
 from datetime import datetime, timedelta
 import configparser
-from ._class.Hospital import KT_Hospital,CCGH_Hospital,VGH_Hospital
 
-# db = SQLAlchemy()
-
+db = SQLAlchemy()
 
 def create_app():
 
@@ -42,30 +40,32 @@ def create_app():
     }
     app.config['SQLALCHEMY_DATABASE_URI'] = str('postgresql://%(usr)s:%(pwd)s@%(host)s:%(port)s/%(table)s' % POSTGRES)
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
-    # db.init_app(app)
-    # try:
-    #     with app.app_context():
-    #         db.session.execute('SELECT 1')
-    #         print("POSTGRES DATABASE CONNECT")
-    # except:
-    #     print("POSTGRES DATABASE CANT CONNECT")
-    #     sys.exit(1)
-    # # print(db)
-    # migrate = Migrate(app, db)
+    db.init_app(app)
+    try:
+        with app.app_context():
+            db.session.execute('SELECT 1')
+            print("POSTGRES DATABASE CONNECT")
+    except Exception as e:
+        print("POSTGRES DATABASE CANT CONNECT")
+        print(e)
+        sys.exit(1)
+    # print(db)
+    migrate = Migrate(app, db)
     # from .model.Usage import UsageModel
 
+    from ._class.Hospital import KT_Hospital,CCGH_Hospital,VGH_Hospital
     hospitals = {}
     for h in config['DEFAULT']['hospital'].split(','):
         channel_secret = config[h]['channel_secret']
         channel_access_token = config[h]['channel_access_token']
         redis_channel = config[h]['redis_channel']
         if (config[h]['class_extend'] == 'KT'):
-            hostipal = KT_Hospital(channel_secret,channel_access_token,redis_channel)
+            hostipal = KT_Hospital(h,channel_secret,channel_access_token,redis_channel)
             hostipal.set_url(config[h]['_id'])
         if (config[h]['class_extend'] == 'CCGH'):
-            hostipal = CCGH_Hospital(channel_secret,channel_access_token,redis_channel)
+            hostipal = CCGH_Hospital(h,channel_secret,channel_access_token,redis_channel)
         if (config[h]['class_extend'] == 'VGH'):
-            hostipal = VGH_Hospital(channel_secret,channel_access_token,redis_channel)
+            hostipal = VGH_Hospital(h,channel_secret,channel_access_token,redis_channel)
         hospitals[h] = hostipal
 
     redis_host = config['REDIS']['host']
@@ -132,9 +132,8 @@ def create_app():
             if (event.message.text == '列表' or event.message.text == '0'):
                 text = hospitals[hospital].crawl_list()
             else:
-                text = hospitals[hospital].crawl_data(part = event.message.text)
-            line_bot_api = hospitals[hospital].line_bot_api
-            line_bot_api.reply_message(
+                text = hospitals[hospital].crawl_data(part = event.message.text, user_id=event.source.user_id)
+            hospitals[hospital].line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text=text)
             )

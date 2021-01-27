@@ -1,14 +1,14 @@
 version: '3'
 services:
-  web:
-    build: .
-    environment:
-        - TZ=Asia/Taipei
-    ports: 
-      - 8787:80
-    restart: always
-    depends_on: 
-      - redis
+  # web:
+  #   build: .
+  #   environment:
+  #       - TZ=Asia/Taipei
+  #   ports: 
+  #     - 8787:80
+  #   restart: always
+  #   depends_on: 
+  #     - redis
   redis:
     image: redis:4-alpine
     command: redis-server --requirepass pwd1234
@@ -23,8 +23,8 @@ services:
     environment:
       POSTGRES_PASSWORD: example
 
-  # adminer:
-  #   image: adminer
-  #   restart: always
-  #   ports:
-  #     - 8080:8080
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8081:8080
