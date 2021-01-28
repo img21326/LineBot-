@@ -56,6 +56,45 @@ class Hospital():
     def crawl_data(self,part,user_id,refresh=False):
         return None
 
+class eight03_Hospital(Hospital):
+    url = 'https://803.mnd.gov.tw/opd/med_info.php'
+    def crawl_data(self,part,user_id,refresh=False):
+        pass
+    def crawl_list(self, refresh=False):
+        rlinks = self.redis.get('links')
+        if rlinks != None and refresh == False:
+            print("history links data")
+            self.all_list = json.loads(rlinks)
+        else:
+            print("refresh links data")
+            r = requests.get(url)
+            j = json.loads(r.text)
+            all_list = {}
+            for i in j:
+                if (len(i['INFO']['title']) > 0):
+                    all_list[i['INFO']['title']] = []
+            for i in j:
+                if (len(i['INFO']['title']) > 0):
+                    all_list[i['INFO']['title']].append({
+                        'subtitle': i['INFO']['subtitle'],
+                        'doctor': i['INFO']['doctor'],
+                        'num': i['INFO']['num'],
+                    })
+            self.list_update_time = time.time()
+            all_list['list_update_time'] = self.list_update_time
+            self.all_list = all_list
+            self.redis.setex("links", self.cache_time,json.dumps(self.all_list))
+        text = ""
+        i = 1
+        for a,value in self.all_list.items():
+            if a == 'list_update_time':
+                continue
+            text += str(i) + ":" + str(a) + "\r\n"
+            i += 1
+        if (len(self.all_list) == 0):
+            text = "還未開始看診"
+        return text 
+
 class VGH_Hospital(Hospital):
     list_url = 'https://www.vghtc.gov.tw/APIPage/OutpatientProcess'
     def crawl_data(self, part,user_id, refresh = False):
@@ -112,12 +151,15 @@ class VGH_Hospital(Hospital):
             all_list = {}
             for i in range(len(result1)):
                 all_list[result1[i].find("a").get("title")] = "https://www.vghtc.gov.tw" + result1[i].find("a").get("href")
+            self.list_update_time = time.time()
+            all_list['list_update_time'] = self.list_update_time
             self.all_list = all_list
             self.redis.setex("links", self.cache_time,json.dumps(self.all_list))
-        self.list_update_time = time.time()
         text = ""
         i = 1
         for a,value in self.all_list.items():
+            if (a == 'list_update_time'):
+                continue
             text += str(i) + ":" + str(a) + "\r\n"
             i += 1
         if (len(self.all_list) == 0):
