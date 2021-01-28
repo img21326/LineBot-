@@ -31,7 +31,7 @@ class Hospital():
     def set_url(self):
         pass
 
-    def part_to_num(self, part):
+    def num_to_part(self, part):
         if str(part).isnumeric():
             try:
                 part = int(part)
@@ -60,7 +60,7 @@ class VGH_Hospital(Hospital):
     list_url = 'https://www.vghtc.gov.tw/APIPage/OutpatientProcess'
     def crawl_data(self, part,user_id, refresh = False):
         self.crawl_list()
-        part = self.part_to_num(part)
+        part = self.num_to_part(part)
         if part not in self.all_list:
             return "醫生還未開始看診"
         self.insert_usage(part,user_id,self.name)
@@ -130,7 +130,7 @@ class CCGH_Hospital(Hospital):
     def crawl_data(self, part,user_id):
         if (self.crawl_list() == False):
             return "還未開始看診"
-        part = self.part_to_num(part)
+        part = self.num_to_part(part)
         if part not in self.all_list:
             return "醫生還未開始看診"
         self.insert_usage(part,user_id,self.name)
@@ -194,7 +194,7 @@ class KT_Hospital(Hospital):
 
     def crawl_data(self, part, user_id,refresh = False):
         self.crawl_list()
-        part = self.part_to_num(part)
+        part = self.num_to_part(part)
         if part not in self.all_list:
             return "醫生還未開始看診"
         self.insert_usage(part,user_id,self.name)
