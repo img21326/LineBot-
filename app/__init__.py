@@ -53,7 +53,7 @@ def create_app():
     migrate = Migrate(app, db)
     # from .model.Usage import UsageModel
 
-    from ._class.Hospital import KT_Hospital,CCGH_Hospital,VGH_Hospital
+    from ._class.Hospital import KT_Hospital,CCGH_Hospital,VGH_Hospital,eight03_Hospital
     hospitals = {}
     for h in config['DEFAULT']['hospital'].split(','):
         channel_secret = config[h]['channel_secret']
@@ -66,6 +66,8 @@ def create_app():
             hostipal = CCGH_Hospital(h,channel_secret,channel_access_token,redis_channel)
         if (config[h]['class_extend'] == 'VGH'):
             hostipal = VGH_Hospital(h,channel_secret,channel_access_token,redis_channel)
+        if (config[h]['class_extend'] == 'eight03'):
+            hostipal = eight03_Hospital(h,channel_secret,channel_access_token,redis_channel)
         hospitals[h] = hostipal
 
     redis_host = config['REDIS']['host']

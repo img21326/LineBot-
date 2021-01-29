@@ -1,6 +1,6 @@
 [DEFAULT]
 hospital = kt_diajia,vgh
-; kt_tongxia,kt_shalu,ccgh
+; kt_tongxia,kt_shalu,ccgh,eight03
 cache_time  = 300
 
 [DB]
@@ -23,7 +23,7 @@ channel_access_token =
 redis_channel = 0
 
 [vgh]
-class_extend = 
+class_extend = VGH
 channel_secret = 
 channel_access_token = 
 redis_channel = 1
@@ -35,6 +35,13 @@ redis_channel = 1
 ; redis_channel = 1
 
 ; [kt_tongxia]
+; class_extend = KT
 ; channel_secret =
 ; channel_access_token = 
 ; redis_channel = 
+
+; [eight03]
+; class_extend = eight03
+; channel_secret = 
+; channel_access_token = 
+; redis_channel = 0

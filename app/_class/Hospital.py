@@ -77,7 +77,7 @@ class eight03_Hospital(Hospital):
             self.all_list = json.loads(rlinks)
         else:
             print("refresh links data")
-            r = requests.get(url)
+            r = requests.get(self.url)
             j = json.loads(r.text)
             all_list = {}
             for i in j:
