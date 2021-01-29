@@ -63,6 +63,7 @@ class eight03_Hospital(Hospital):
         part = self.num_to_part(part)
         if part not in self.all_list:
             return "醫生還未開始看診"
+        self.insert_usage(part,user_id,self.name)
         _str = part + '\r\n--------------------------------\r\n'
         for r in self.all_list[part]:
             _str += '醫師:' + r['doctor'] + "(" + str(r['subtitle']) + ")" +'\r\n'
