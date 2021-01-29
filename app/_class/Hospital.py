@@ -59,7 +59,17 @@ class Hospital():
 class eight03_Hospital(Hospital):
     url = 'https://803.mnd.gov.tw/opd/med_info.php'
     def crawl_data(self,part,user_id,refresh=False):
-        pass
+        self.crawl_list()
+        part = self.num_to_part(part)
+        if part not in self.all_list:
+            return "醫生還未開始看診"
+        _str = part + '\r\n--------------------------------\r\n'
+        for r in self.all_list[part]:
+            _str += '醫師:' + r['doctor'] + "(" + str(r['subtitle']) + ")" +'\r\n'
+            _str += '目前看診號次:' + str(r['num']) + '\r\n--------------------------------\r\n'
+        _str = _str + '最後更新時間:' + str(datetime.now().strftime("%Y/%m/%d %H:%M"))
+        return _str
+
     def crawl_list(self, refresh=False):
         rlinks = self.redis.get('links')
         if rlinks != None and refresh == False:
