@@ -24,6 +24,16 @@ services:
     restart: always
     environment:
       POSTGRES_PASSWORD: ${DB_PASSWD}
+      PGDATA: /var/lib/postgresql/data/PGDATA
+    volumes: 
+      - ./pgdata:/var/lib/postgresql/data/PGDATA
+    networks:
+      - web
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8086:8080
     networks:
       - web
 networks:
