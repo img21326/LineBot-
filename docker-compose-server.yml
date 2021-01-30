@@ -11,6 +11,8 @@ services:
         - "traefik.basic.frontend.rule=Host:linebotwatchdoctor.liiao.cc"
         - "traefik.frontend.entryPoints=https,http"
     restart: always
+    volumes:
+        - ./:/app
     networks:
         - web
   redis:
