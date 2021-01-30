@@ -7,5 +7,5 @@ __pycache__/*
 migrations/
 migrations/*
 config.ini
-pg_data
+pg_data/
 pg_data/*

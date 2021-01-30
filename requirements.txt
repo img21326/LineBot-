@@ -6,3 +6,4 @@ line-bot-sdk==1.18.0
 flask_sqlalchemy
 flask_migrate
 redis
+psycopg2
